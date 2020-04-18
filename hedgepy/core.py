@@ -1,13 +1,11 @@
 from typing import Dict, List
 import pandas as pd
 import dcor
-import networkx and nx
+import networkx as nx
 from memoization import cached
 
 
-def ticker_time_frame(
-    df: pd.DataFrame, ticker_col_name: str
-) -> Dict[str, pd.DataFrame]:
+def ticker_time_frame(df: pd.DataFrame, ticker_col_name: str) -> Dict[str, pd.DataFrame]:
     """Returns a dictionary of pivoted dataframes"""
 
     try:
