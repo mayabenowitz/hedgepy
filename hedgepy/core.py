@@ -1,11 +1,13 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 import pandas as pd
 import dcor
 import networkx as nx
 from memoization import cached
 
 
-def ticker_time_frame(df: pd.DataFrame, ticker_col_name: str) -> Dict[str, pd.DataFrame]:
+def ticker_time_frame(
+    df: pd.DataFrame, ticker_col_name: str
+) -> Dict[str, pd.DataFrame]:
     """Returns a dictionary of pivoted dataframes"""
 
     try:
@@ -15,10 +17,6 @@ def ticker_time_frame(df: pd.DataFrame, ticker_col_name: str) -> Dict[str, pd.Da
 
     time_series = [col for col in df.columns.tolist() if col != ticker_col_name]
     df_list = [df.pivot(columns=ticker_col_name, values=ts) for ts in time_series]
-
-    for i,df in enumerate(df_list):
-        df.name = time_series[i]
-        df.columns = [col + f"_{df.name}" for col in df.columns]
 
     df_dict = dict(zip(time_series, df_list))
 
@@ -42,9 +40,11 @@ def distance_correlation_matrix(df):
     k=0
     for i in tickers:
         v_i = df.loc[:, i].values
+        v_i = np.array([i for i in v_i])
 
         for j in tickers[k:]:
             v_j = df.loc[:, j].values
+            v_j = np.array([j for j in v_j])
             dcor_val = dcor.distance_correlation(v_i, v_j)
             df_dcor.at[i, j] = dcor_val
             df_dcor.at[j, i] = dcor_val
@@ -77,40 +77,68 @@ def distance_correlation_network(df, corr_threshold=0.33):
     return H
 
 class HedgeFrame(object):
-    def __init__(self, df: pd.DataFrame, ticker_col_name: str, detrend: bool=True) -> None:
+    def __init__(
+        self, df: pd.DataFrame,
+        ticker_col_name: str,
+        detrend: bool=True,
+        coalesce: bool=True
+    ) -> None:
+
         self.df = df
         self.ticker_col_name = ticker_col_name
         self.detrend = detrend
+        self.coalesce = coalesce
 
         if self.detrend:
             frame = detrend_time_series(self.preprocess())
         else:
             frame = self.preprocess()
 
-        self.frame = frame
+        if self.coalesce:
+            frame = self.coalesce_preprocess()
 
         def get_keys(frame: Dict[str, pd.DataFrame]) -> List[str]:
             keys = list(frame.keys())
             return keys
 
-        keys = get_keys(self.frame)
-        self.keys = keys
+        if not self.coalesce:
+            keys = get_keys(self.frame)
+            self.keys = keys
 
-        self.first = frame[keys[0]]
-        self.last = frame[keys[-1]]
+            self.first = frame[keys[0]]
+            self.last = frame[keys[-1]]
 
     def preprocess(self) -> Dict[str, pd.DataFrame]:
         frame = ticker_time_frame(self.df, ticker_col_name=self.ticker_col_name)
+        self.frame = frame
         return frame
 
-    def dcor(self) -> Dict[str, pd.DataFrame]:
+    def coalesce_preprocess(self) -> Dict[str, pd.DataFrame]:
+        frame = {
+                   time_series: df.applymap(lambda x: [x]) for time_series, df in self.frame.items()
+            }
 
-        self.frame = {
-            time_series: distance_correlation_matrix(df) for time_series, df in self.frame.items()
-        }
+        frame_lst = list(frame.values())
+        coalesced_frame = frame_lst[0]
 
-        self.first = self.frame[self.keys[0]]
-        self.last = self.frame[self.keys[-1]]
+        for frame in frame_lst[1:]:
+            coalesced_frame = coalesced_frame + frame
+
+        self.frame = coalesced_frame.applymap(lambda x: np.array(x)).dropna()
+        return coalesced_frame
+
+    def dcor(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+
+        if self.coalesce is True:
+            self.df = distance_correlation_matrix(self.frame)
+
+        if self.coalesce is False:
+            self.frame = {
+                time_series: distance_correlation_matrix(df)
+                for time_series, df in self.frame.items()
+            }
+            self.first = self.frame[self.keys[0]]
+            self.last = self.frame[self.keys[-1]]
 
         return self
 
@@ -120,8 +148,5 @@ class HedgeFrame(object):
             time_series: distance_correlation_network(df_dcor, corr_threshold=corr_threshold)
             for time_series, df_dcor in self.frame.items()
         }
-
-        self.first = self.frame[self.keys[0]]
-        self.last = self.frame[self.keys[-1]]
 
         return self
