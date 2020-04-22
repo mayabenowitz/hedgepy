@@ -4,10 +4,7 @@ import dcor
 import networkx as nx
 from memoization import cached
 
-
-def ticker_time_frame(
-    df: pd.DataFrame, ticker_col_name: str
-) -> Dict[str, pd.DataFrame]:
+def ticker_time_frame(df: pd.DataFrame, ticker_col_name: str) -> Dict[str, pd.DataFrame]:
     """Returns a dictionary of pivoted dataframes"""
 
     try:
@@ -24,7 +21,7 @@ def ticker_time_frame(
 
 
 def detrend_time_series(frame: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
-    """detrends a frame of time series"""
+    """detrends a bag of time series"""
 
     for time_series, df in frame.items():
         frame[time_series] = frame[time_series].diff().dropna()
@@ -32,23 +29,49 @@ def detrend_time_series(frame: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFram
     return frame
 
 
-def coalesce_time_series(frame: Dict[str, pd.DataFrame]) -> pd.DataFrame:
-    frame = {
-               time_series: df.applymap(lambda x: [x]) for time_series, df in frame.items()
+def coalesce_time_series(frame: Dict[str, pd.DataFrame], rolling: bool=False) -> pd.DataFrame:
+
+    if not rolling:
+        frame = {
+                   time_series: df.applymap(lambda x: [x]) for time_series, df in frame.items()
+            }
+
+        frame_lst = list(frame.values())
+        coalesced_frame = frame_lst[0]
+
+        for frame in frame_lst[1:]:
+            dfc = coalesced_frame + frame
+
+        dfc = dfc.applymap(lambda x: np.array(x)).dropna()
+        return dfc
+
+    if rolling:
+        frame = {
+            time_series:
+
+                [
+                    frame[time_series][i].applymap(lambda x: [x])
+                    for i,df in enumerate(rolling_df_list)
+                ]
+
+            for time_series, rolling_df_list in frame.items()
         }
 
-    frame_lst = list(frame.values())
-    coalesced_frame = frame_lst[0]
+        dff = pd.DataFrame.from_dict(frame)
+        col1 = dff.columns[0]
+        for col in dff.columns[1:]:
+            dff[col1] += dff[col]
 
-    for frame in frame_lst[1:]:
-        dfc = coalesced_frame + frame
+        cdf_list = dff[col1].tolist()
+        cdf_list = [df.applymap(lambda x: np.array(x)).dropna() for df in cdf_list]
+        timestamps = [cdf_list[i].index[-1] for i in range(len(cdf_list))]
 
-    dfc = dfc.applymap(lambda x: np.array(x)).dropna()
-    return dfc
+        frame = dict(zip(timestamps, cdf_list))
+        return frame
 
 
 @cached
-def distance_correlation_matrix(df):
+def distance_correlation_matrix(df: pd.DataFrame) -> pd.DataFrame:
 
     tickers = df.columns.tolist()
     df_dcor = pd.DataFrame(index=tickers, columns=tickers)
@@ -70,7 +93,7 @@ def distance_correlation_matrix(df):
     return df_dcor
 
 @cached
-def distance_correlation_network(df, corr_threshold=0.33):
+def distance_correlation_network(df: pd.DataFrame, corr_threshold: float=0.33) -> pd.DataFrame:
 
     corr_matrix = df.values.astype('float')
     sim_matrix = 1 - corr_matrix
@@ -92,28 +115,6 @@ def distance_correlation_network(df, corr_threshold=0.33):
 
     return H
 
-@cached
-def distance_correlation_network(df, corr_threshold=0.33):
-
-    corr_matrix = df.values.astype('float')
-    sim_matrix = 1 - corr_matrix
-
-    G = nx.from_numpy_matrix(sim_matrix)
-    ticker_names = df.index.values
-
-    G = nx.relabel_nodes(G, lambda x: ticker_names[x])
-    G.edges(data=True)
-
-    H  = G.copy()
-
-    for (u, v, wt) in G.edges.data('weight'):
-        if wt >= 1 - corr_threshold:
-            H.remove_edge(u, v)
-
-        if u == v:
-            H.remove_edge(u, v)
-
-    return H
 
 class HedgeFrame(object):
     def __init__(self, df: pd.DataFrame, ticker_col_name: str, detrend: bool=True) -> None:
@@ -141,39 +142,51 @@ class HedgeFrame(object):
         self.frame = frame
         return frame
 
-    def dcor(self, rolling_window=None) -> Dict[str, pd.DataFrame]:
+    def dcor(self, rolling_window=None, coalesce: bool=True) -> Dict[str, pd.DataFrame]:
 
         if rolling_window is None:
-            frame = {
-                time_series: distance_correlation_matrix(df)
-                for time_series, df in self.frame.items()
-            }
-            self.first = self.frame[self.keys[0]]
-            self.last = self.frame[self.keys[-1]]
-
+            if coalesce:
+                frame = coalesce_time_series(frame, rolling=False)
+                frame = distance_correlation_matrix(frame)
+                self.frame = frame
+            if not coalesce:
+                frame = {
+                    time_series: distance_correlation_matrix(df)
+                    for time_series, df in self.frame.items()
+                }
+                self.frame = frame
             return self
 
         else:
             frame = {
-                time_series: [df.iloc[i:i+rolling_window] for i in range(len(df))]
+                time_series: [df.iloc[i:i+rolling_window] for i in range(len(df)-rolling_window)]
                 for time_series, df in self.frame.items()
             }
+            if coalesce:
+                frame = coalesce_time_series(frame, rolling=True)
+                frame = {
+                    timestamp: distance_correlation_matrix(df)
+                    for timestamp, df in frame.items()
+                }
+                self.frame = frame
+            if not coalesce:
+                frame = {
+                    time_series:
 
-            frame = {
-                time_series:
+                        [
+                            distance_correlation_matrix(frame[time_series][i])
+                            for i,df in enumerate(rolling_df_list)
+                        ]
 
-                    [
-                        distance_correlation_matrix(frame[time_series][i])
-                        for i,df in enumerate(rolling_df_list)
-                    ]
+                    for time_series, rolling_df_list in frame.items()
+                }
+                self.frame = frame
 
-                for time_series, rolling_df_list in frame.items()
-            }
             return self
 
     def network(self, corr_threshold: int=0.33) -> Dict[str, pd.DataFrame]:
 
-        self.frame = {
+        frame = {
             time_series: distance_correlation_network(df_dcor, corr_threshold=corr_threshold)
             for time_series, df_dcor in self.frame.items()
         }
