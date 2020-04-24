@@ -1,5 +1,6 @@
 from typing import Dict, List, Union
 import pandas as pd
+import numpy as np
 import dcor
 import networkx as nx
 from memoization import cached
@@ -93,12 +94,12 @@ def distance_correlation_matrix(df: pd.DataFrame) -> pd.DataFrame:
     return df_dcor
 
 @cached
-def distance_correlation_network(df: pd.DataFrame, corr_threshold: float=0.33) -> pd.DataFrame:
+def distance_correlation_network(df: pd.DataFrame, corr_threshold=None) -> nx.Graph:
 
     corr_matrix = df.values.astype('float')
-    sim_matrix = 1 - corr_matrix
+    # sim_matrix = 1 - corr_matrix
 
-    G = nx.from_numpy_matrix(sim_matrix)
+    G = nx.from_numpy_matrix(corr_matrix)
     ticker_names = df.index.values
 
     G = nx.relabel_nodes(G, lambda x: ticker_names[x])
@@ -106,15 +107,16 @@ def distance_correlation_network(df: pd.DataFrame, corr_threshold: float=0.33) -
 
     H  = G.copy()
 
-    for (u, v, wt) in G.edges.data('weight'):
-        if wt >= 1 - corr_threshold:
-            H.remove_edge(u, v)
-
+    for (u,v,wt) in G.edges.data('weight'):
         if u == v:
             H.remove_edge(u, v)
 
-    return H
+    if corr_threshold is not None:
+        for (u, v, wt) in G.edges.data('weight'):
+            if wt <= corr_threshold:
+                H.remove_edge(u, v)
 
+    return H
 
 class HedgeFrame(object):
     def __init__(self, df: pd.DataFrame, ticker_col_name: str, detrend: bool=True) -> None:
@@ -142,7 +144,7 @@ class HedgeFrame(object):
         self.frame = frame
         return frame
 
-    def dcor(self, rolling_window=None, coalesce: bool=True) -> Dict[str, pd.DataFrame]:
+    def dcor(self, rolling_window=None, coalesce=True) -> Dict[str, pd.DataFrame]:
 
         if rolling_window is None:
             if coalesce:
@@ -184,11 +186,12 @@ class HedgeFrame(object):
 
             return self
 
-    def network(self, corr_threshold: int=0.33) -> Dict[str, pd.DataFrame]:
+    def network(self, corr_threshold=None) -> Dict[str, pd.DataFrame]:
 
         frame = {
             time_series: distance_correlation_network(df_dcor, corr_threshold=corr_threshold)
             for time_series, df_dcor in self.frame.items()
         }
+        self.frame = frame
 
         return self
