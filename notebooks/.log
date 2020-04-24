@@ -1124,3 +1124,9 @@ See the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stabl
 2020-04-23 17:20:27,403 [27864] DEBUG    matplotlib.font_manager:1271: [JupyterRequire] findfont: score(<Font 'Bookman Old Style' (BOOKOSB.TTF) normal normal book normal>) = 10.05
 2020-04-23 17:20:27,403 [27864] DEBUG    matplotlib.font_manager:1271: [JupyterRequire] findfont: score(<Font 'Marlett' (marlett.ttf) normal normal 400 normal>) = 10.05
 2020-04-23 17:20:27,404 [27864] DEBUG    matplotlib.font_manager:1294: [JupyterRequire] findfont: Matching :family=sans-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=14.0 to Arial ('C:\\WINDOWS\\Fonts\\arial.ttf') with score of 3.383333.
+2020-04-23 19:53:24,038 [27864] WARNING  py.warnings:110: [JupyterRequire] C:\Users\maya.benowitz\AppData\Local\Continuum\anaconda3\lib\site-packages\ipykernel_launcher.py:1: UserWarning: Boolean Series key will be reindexed to match DataFrame index.
+  """Entry point for launching an IPython kernel.
+
+2020-04-23 19:53:28,944 [27864] WARNING  py.warnings:110: [JupyterRequire] C:\Users\maya.benowitz\AppData\Local\Continuum\anaconda3\lib\site-packages\ipykernel_launcher.py:1: UserWarning: Boolean Series key will be reindexed to match DataFrame index.
+  """Entry point for launching an IPython kernel.
+
