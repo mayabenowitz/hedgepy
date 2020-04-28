@@ -1,6 +1,7 @@
 from typing import Dict, List, Union
 import pandas as pd
 import numpy as np
+from numpy.linalg import matrix_power
 import dcor
 import networkx as nx
 from memoization import cached
@@ -91,10 +92,15 @@ def distance_correlation_matrix(df: pd.DataFrame) -> pd.DataFrame:
 
         k+=1
 
-    return df_dcor
+    dcor_matrix = matrix_power(df_dcor.to_numpy(), 3)
+    df_expdcor = pd.DataFrame(dcor_matrix)
+    df_expdcor.columns = df_dcor.columns
+    df_expdcor.index = df_dcor.index
+
+    return df_expdcor
 
 @cached
-def distance_correlation_network(df: pd.DataFrame, corr_threshold=None) -> nx.Graph:
+def build_correlation_network(df: pd.DataFrame, corr_threshold=None) -> nx.Graph:
 
     corr_matrix = df.values.astype('float')
     # sim_matrix = 1 - corr_matrix
@@ -189,7 +195,7 @@ class HedgeFrame(object):
     def network(self, corr_threshold=None) -> Dict[str, pd.DataFrame]:
 
         frame = {
-            time_series: distance_correlation_network(df_dcor, corr_threshold=corr_threshold)
+            time_series: build_correlation_network(df_dcor, corr_threshold=corr_threshold)
             for time_series, df_dcor in self.frame.items()
         }
         self.frame = frame
