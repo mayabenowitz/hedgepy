@@ -2,6 +2,7 @@ from typing import Dict, List, Union
 import pandas as pd
 import numpy as np
 from numpy.linalg import matrix_power
+from scipy.linalg import expm
 import dcor
 import networkx as nx
 from memoization import cached
@@ -92,12 +93,14 @@ def distance_correlation_matrix(df: pd.DataFrame) -> pd.DataFrame:
 
         k+=1
 
-    dcor_matrix = matrix_power(df_dcor.to_numpy(), 3)
+    # dcor_matrix = matrix_power(df_dcor.to_numpy(), 2)
+    dcor_matrix = expm(df_dcor.to_numpy())
     df_expdcor = pd.DataFrame(dcor_matrix)
     df_expdcor.columns = df_dcor.columns
     df_expdcor.index = df_dcor.index
 
     return df_expdcor
+    # return df_dcor
 
 @cached
 def build_correlation_network(df: pd.DataFrame, corr_threshold=None) -> nx.Graph:
