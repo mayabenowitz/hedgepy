@@ -134,14 +134,6 @@ def build_correlation_network(df: pd.DataFrame, corr_threshold=None, soft_thresh
 
     return H
 
-    def build_network_time_series(frame: Dict[str, pd.DataFrame], corr_threshold=None, soft_threshold: bool=True) -> Dict[pd.Timestamp, nx.Graph]:
-        frame = {
-            time_series: build_correlation_network(df_dcor, corr_threshold=corr_threshold, soft_threshold=soft_threshold)
-            for time_series, df_dcor in frame.items()
-        }
-        return frame
-
-
 class HedgeFrame(object):
     def __init__(self, df: pd.DataFrame, ticker_col_name: str, detrend: bool=True) -> None:
 
@@ -213,9 +205,18 @@ class HedgeFrame(object):
 @cached
 def build_series(df, ticker_col_name, rolling_window, coalesce=True, detrend=True):
     hf = HedgeFrame(df, ticker_col_name=ticker_col_name, detrend=detrend)
-    df_ts = hf.dcor(rolling_window=rolling_window, coalesce=coalesce)
+    frame = hf.dcor(rolling_window=rolling_window, coalesce=coalesce)
 
-    return df_ts
+    return frame
+
+def build_network_time_series(frame: Dict[str, pd.DataFrame], corr_threshold=None, soft_threshold: bool=True) -> Dict[pd.Timestamp, nx.Graph]:
+    frame = {
+        time_series: build_correlation_network(df_dcor, corr_threshold=corr_threshold, soft_threshold=soft_threshold)
+        for time_series, df_dcor in frame.items()
+    }
+    return frame
+
+
 
     # def network(self, corr_threshold=None) -> Dict[str, pd.DataFrame]:
     #
