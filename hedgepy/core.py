@@ -94,18 +94,25 @@ def distance_correlation_matrix(df: pd.DataFrame) -> pd.DataFrame:
         k+=1
 
     # dcor_matrix = matrix_power(df_dcor.to_numpy(), 2)
-    dcor_matrix = expm(df_dcor.to_numpy())
-    df_expdcor = pd.DataFrame(dcor_matrix)
-    df_expdcor.columns = df_dcor.columns
-    df_expdcor.index = df_dcor.index
+    # dcor_matrix = expm(df_dcor.to_numpy())
+    # df_expdcor = pd.DataFrame(dcor_matrix)
+    # df_expdcor.columns = df_dcor.columns
+    # df_expdcor.index = df_dcor.index
 
-    return df_expdcor
-    # return df_dcor
+    # return df_expdcor
+    return df_dcor
 
 @cached
-def build_correlation_network(df: pd.DataFrame, corr_threshold=None) -> nx.Graph:
+def build_correlation_network(df: pd.DataFrame, corr_threshold=None, soft_threshold=True) -> nx.Graph:
 
-    corr_matrix = df.values.astype('float')
+    if soft_threshold:
+        df_exp = expm(df.to_numpy())
+        df_exp = pd.DataFrame(df_exp)
+        df_exp.columns = df.columns
+        df_exp.index = df.index
+        corr_matrix = df_exp.values.astype('float')
+    else:
+        corr_matrix = df.values.astype('float')
     # sim_matrix = 1 - corr_matrix
 
     G = nx.from_numpy_matrix(corr_matrix)
@@ -126,6 +133,14 @@ def build_correlation_network(df: pd.DataFrame, corr_threshold=None) -> nx.Graph
                 H.remove_edge(u, v)
 
     return H
+
+    def build_network_time_series(frame: Dict[str, pd.DataFrame], corr_threshold=None, soft_threshold: bool=True) -> Dict[pd.Timestamp, nx.Graph]:
+        frame = {
+            time_series: build_correlation_network(df_dcor, corr_threshold=corr_threshold, soft_threshold=soft_threshold)
+            for time_series, df_dcor in frame.items()
+        }
+        return frame
+
 
 class HedgeFrame(object):
     def __init__(self, df: pd.DataFrame, ticker_col_name: str, detrend: bool=True) -> None:
@@ -166,7 +181,7 @@ class HedgeFrame(object):
                     for time_series, df in self.frame.items()
                 }
                 self.frame = frame
-            return self
+            return frame
 
         else:
             frame = {
@@ -193,14 +208,21 @@ class HedgeFrame(object):
                 }
                 self.frame = frame
 
-            return self
+            return frame
 
-    def network(self, corr_threshold=None) -> Dict[str, pd.DataFrame]:
+@cached
+def build_series(df, ticker_col_name, rolling_window, coalesce=True, detrend=True):
+    hf = HedgeFrame(df, ticker_col_name=ticker_col_name, detrend=detrend)
+    df_ts = hf.dcor(rolling_window=rolling_window, coalesce=coalesce)
 
-        frame = {
-            time_series: build_correlation_network(df_dcor, corr_threshold=corr_threshold)
-            for time_series, df_dcor in self.frame.items()
-        }
-        self.frame = frame
+    return df_ts
 
-        return self
+    # def network(self, corr_threshold=None) -> Dict[str, pd.DataFrame]:
+    #
+    #     frame = {
+    #         time_series: build_correlation_network(df_dcor, corr_threshold=corr_threshold)
+    #         for time_series, df_dcor in self.frame.items()
+    #     }
+    #     self.frame = frame
+    #
+    #     return self
