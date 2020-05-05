@@ -2,7 +2,7 @@ from typing import Dict
 import json
 import pandas as pd
 
-def write(df_ts: Dict[pd.Timestamp, pd.DataFrame], file_name: str) -> None:
+def write_series(df_ts: Dict[pd.Timestamp, pd.DataFrame], file_name: str) -> None:
     keys = list(df_ts.keys())
     values = list(df_ts.values())
 
@@ -13,7 +13,7 @@ def write(df_ts: Dict[pd.Timestamp, pd.DataFrame], file_name: str) -> None:
     with open(f'../experiments/data/interim/{file_name}', 'w') as f:
         json.dump(df_ts, f)
 
-def read(json_file: str) -> Dict[pd.Timestamp, pd.DataFrame]:
+def read_series(json_file: str) -> Dict[pd.Timestamp, pd.DataFrame]:
     with open(f'../experiments/data/interim/{json_file}.json') as f:
         data = json.load(f)
 
@@ -25,3 +25,11 @@ def read(json_file: str) -> Dict[pd.Timestamp, pd.DataFrame]:
 
     df_ts = dict(zip(keys, values))
     return df_ts
+
+def read_data(csv_file: str) -> pd.DataFrame:
+    df = pd.read_csv(f"../experiments/data/interim/{csv_file}.csv")
+    df['Date'] = pd.to_datetime(df['Date'])
+    df.set_index('Date', inplace=True)
+    df.dropna(inplace=True)
+
+    return df
