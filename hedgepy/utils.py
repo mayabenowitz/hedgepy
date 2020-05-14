@@ -14,7 +14,7 @@ def write_series(df_ts: Dict[pd.Timestamp, pd.DataFrame], file_name: str) -> Non
         json.dump(df_ts, f)
 
 def read_series(json_file: str) -> Dict[pd.Timestamp, pd.DataFrame]:
-    with open(f'../experiments/data/interim/{json_file}.json') as f:
+    with open(f'../experiments/data/interim/{json_file}') as f:
         data = json.load(f)
 
     keys = list(data.keys())

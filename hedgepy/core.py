@@ -29,8 +29,11 @@ def ticker_time_frame(
 def detrend_time_series(frame: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
     """detrends a bag of time series"""
 
+    # for time_series, df in frame.items():
+    #     frame[time_series] = frame[time_series].diff().dropna()
+
     for time_series, df in frame.items():
-        frame[time_series] = frame[time_series].diff().dropna()
+        frame[time_series] = np.log(frame[time_series]) - np.log(frame[time_series].shift(1))
 
     return frame
 
@@ -95,13 +98,6 @@ def distance_correlation_matrix(df: pd.DataFrame) -> pd.DataFrame:
 
         k += 1
 
-    # dcor_matrix = matrix_power(df_dcor.to_numpy(), 2)
-    # dcor_matrix = expm(df_dcor.to_numpy())
-    # df_expdcor = pd.DataFrame(dcor_matrix)
-    # df_expdcor.columns = df_dcor.columns
-    # df_expdcor.index = df_dcor.index
-
-    # return df_expdcor
     return df_dcor
 
 
@@ -234,13 +230,3 @@ def build_network_time_series(
         for time_series, df_dcor in frame.items()
     }
     return frame
-
-    # def network(self, corr_threshold=None) -> Dict[str, pd.DataFrame]:
-    #
-    #     frame = {
-    #         time_series: build_correlation_network(df_dcor, corr_threshold=corr_threshold)
-    #         for time_series, df_dcor in self.frame.items()
-    #     }
-    #     self.frame = frame
-    #
-    #     return self

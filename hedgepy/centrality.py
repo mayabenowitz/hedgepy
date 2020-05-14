@@ -13,8 +13,24 @@ def average_eigenvector_centrality(G):
     return avg_ec
 
 def average_closeness_centrality(G):
-    cbc = nx.closeness_centrality(G,)
+    cc = nx.closeness_centrality(G,)
+    avg_cc = np.mean(list(cc.values()))
+    return avg_cc
+
+def average_communicability_centrality(G):
+    cbc = nx.communicability_betweenness_centrality(G)
     avg_cbc = np.mean(list(cbc.values()))
+    return avg_cbc
+
+def global_communicability(nx_ts):
+    nx_time_series = {
+        timestamp: average_communicability_centrality(G)
+        for timestamp, G in nx_ts.items()
+    }
+
+    df = pd.DataFrame.from_dict(nx_time_series, orient='index')\
+        .rename(columns={0: 'global_communicability'})
+    return df
 
 def global_eigencentrality(nx_ts):
     nx_time_series = {
