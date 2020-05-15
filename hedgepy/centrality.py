@@ -61,3 +61,13 @@ def global_closeness(nx_ts):
     df = pd.DataFrame.from_dict(nx_time_series, orient='index')\
         .rename(columns={0: 'global_communicability'})
     return df
+
+def global_clustering(nx_ts):
+    nx_time_series = {
+        timestamp: nx.average_clustering(G, weight='weight')
+        for timestamp, G in nx_ts.items()
+    }
+
+    df = pd.DataFrame.from_dict(nx_time_series, orient='index')\
+        .rename(columns={0: 'global_clustering'})
+    return df

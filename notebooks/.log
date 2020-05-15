@@ -21809,3 +21809,48 @@ To register the converters:
 2020-05-14 08:36:28,037 [11084] DEBUG    root:197: [JupyterRequire] Configuration requested: {'paths': {}, 'shim': None}
 2020-05-14 08:36:28,037 [11084] INFO     root:271: [JupyterRequire] Comms have been successfully initialized.
 2020-05-14 08:36:28,038 [11084] DEBUG    root:97: [JupyterRequire] Registering comm targets.
+2020-05-14 10:35:15,614 [9044] DEBUG    root:75: [JupyterRequire] Loading Jupyter Require extension.
+2020-05-14 10:35:15,614 [9044] DEBUG    root:93: [JupyterRequire] Initializing comms.
+2020-05-14 10:35:15,614 [9044] INFO     root:247: [JupyterRequire] Initializing comms.
+2020-05-14 10:35:15,616 [9044] DEBUG    root:197: [JupyterRequire] Configuration requested: {'paths': {}, 'shim': None}
+2020-05-14 10:35:15,616 [9044] INFO     root:271: [JupyterRequire] Comms have been successfully initialized.
+2020-05-14 10:35:15,617 [9044] DEBUG    root:97: [JupyterRequire] Registering comm targets.
+2020-05-14 10:35:16,206 [9044] DEBUG    root:75: [JupyterRequire] Loading Jupyter Require extension.
+2020-05-14 10:35:16,206 [9044] DEBUG    root:93: [JupyterRequire] Initializing comms.
+2020-05-14 10:35:16,206 [9044] INFO     root:247: [JupyterRequire] Initializing comms.
+2020-05-14 10:35:16,208 [9044] DEBUG    root:197: [JupyterRequire] Configuration requested: {'paths': {}, 'shim': None}
+2020-05-14 10:35:16,209 [9044] INFO     root:271: [JupyterRequire] Comms have been successfully initialized.
+2020-05-14 10:35:16,209 [9044] DEBUG    root:97: [JupyterRequire] Registering comm targets.
+2020-05-14 14:13:49,370 [20952] DEBUG    root:75: [JupyterRequire] Loading Jupyter Require extension.
+2020-05-14 14:13:49,370 [20952] DEBUG    root:93: [JupyterRequire] Initializing comms.
+2020-05-14 14:13:49,370 [20952] INFO     root:247: [JupyterRequire] Initializing comms.
+2020-05-14 14:13:49,372 [20952] DEBUG    root:197: [JupyterRequire] Configuration requested: {'paths': {}, 'shim': None}
+2020-05-14 14:13:49,373 [20952] INFO     root:271: [JupyterRequire] Comms have been successfully initialized.
+2020-05-14 14:13:49,373 [20952] DEBUG    root:97: [JupyterRequire] Registering comm targets.
+2020-05-14 14:13:49,899 [20952] DEBUG    root:75: [JupyterRequire] Loading Jupyter Require extension.
+2020-05-14 14:13:49,899 [20952] DEBUG    root:93: [JupyterRequire] Initializing comms.
+2020-05-14 14:13:49,900 [20952] INFO     root:247: [JupyterRequire] Initializing comms.
+2020-05-14 14:13:49,901 [20952] DEBUG    root:197: [JupyterRequire] Configuration requested: {'paths': {}, 'shim': None}
+2020-05-14 14:13:49,902 [20952] INFO     root:271: [JupyterRequire] Comms have been successfully initialized.
+2020-05-14 14:13:49,902 [20952] DEBUG    root:97: [JupyterRequire] Registering comm targets.
+2020-05-15 08:07:33,873 [24108] DEBUG    root:75: [JupyterRequire] Loading Jupyter Require extension.
+2020-05-15 08:07:33,873 [24108] DEBUG    root:93: [JupyterRequire] Initializing comms.
+2020-05-15 08:07:33,873 [24108] INFO     root:247: [JupyterRequire] Initializing comms.
+2020-05-15 08:07:33,875 [24108] DEBUG    root:197: [JupyterRequire] Configuration requested: {'paths': {}, 'shim': None}
+2020-05-15 08:07:33,876 [24108] INFO     root:271: [JupyterRequire] Comms have been successfully initialized.
+2020-05-15 08:07:33,876 [24108] DEBUG    root:97: [JupyterRequire] Registering comm targets.
+2020-05-15 08:16:19,283 [23264] DEBUG    root:75: [JupyterRequire] Loading Jupyter Require extension.
+2020-05-15 08:16:19,283 [23264] DEBUG    root:93: [JupyterRequire] Initializing comms.
+2020-05-15 08:16:19,284 [23264] INFO     root:247: [JupyterRequire] Initializing comms.
+2020-05-15 08:16:19,285 [23264] DEBUG    root:197: [JupyterRequire] Configuration requested: {'paths': {}, 'shim': None}
+2020-05-15 08:16:19,286 [23264] INFO     root:271: [JupyterRequire] Comms have been successfully initialized.
+2020-05-15 08:16:19,286 [23264] DEBUG    root:97: [JupyterRequire] Registering comm targets.
+2020-05-15 09:44:13,828 [23264] WARNING  py.warnings:110: [JupyterRequire] C:\Users\maya.benowitz\AppData\Local\Continuum\anaconda3\lib\site-packages\ipykernel_launcher.py:1: FutureWarning: Sorting because non-concatenation axis is not aligned. A future version
+of pandas will change to not sort by default.
+
+To accept the future behavior, pass 'sort=False'.
+
+To retain the current behavior and silence the warning, pass 'sort=True'.
+
+  """Entry point for launching an IPython kernel.
+
