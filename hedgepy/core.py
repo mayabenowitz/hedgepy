@@ -7,7 +7,10 @@ import dcor
 import networkx as nx
 from memoization import cached
 
-def ticker_time_frame(df: pd.DataFrame, ticker_col_name: str) -> Dict[str, pd.DataFrame]:
+
+def ticker_time_frame(
+    df: pd.DataFrame, ticker_col_name: str
+) -> Dict[str, pd.DataFrame]:
     """Returns a dictionary of pivoted dataframes"""
 
     try:
@@ -26,18 +29,23 @@ def ticker_time_frame(df: pd.DataFrame, ticker_col_name: str) -> Dict[str, pd.Da
 def detrend_time_series(frame: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
     """detrends a bag of time series"""
 
+    # for time_series, df in frame.items():
+    #     frame[time_series] = frame[time_series].diff().dropna()
+
     for time_series, df in frame.items():
-        frame[time_series] = frame[time_series].diff().dropna()
+        frame[time_series] = np.log(frame[time_series]) - np.log(frame[time_series].shift(1))
 
     return frame
 
 
-def coalesce_time_series(frame: Dict[str, pd.DataFrame], rolling: bool=False) -> pd.DataFrame:
+def coalesce_time_series(
+    frame: Dict[str, pd.DataFrame], rolling: bool = False
+) -> pd.DataFrame:
 
     if not rolling:
         frame = {
-                   time_series: df.applymap(lambda x: [x]) for time_series, df in frame.items()
-            }
+            time_series: df.applymap(lambda x: [x]) for time_series, df in frame.items()
+        }
 
         frame_lst = list(frame.values())
         coalesced_frame = frame_lst[0]
@@ -50,13 +58,10 @@ def coalesce_time_series(frame: Dict[str, pd.DataFrame], rolling: bool=False) ->
 
     if rolling:
         frame = {
-            time_series:
-
-                [
-                    frame[time_series][i].applymap(lambda x: [x])
-                    for i,df in enumerate(rolling_df_list)
-                ]
-
+            time_series: [
+                frame[time_series][i].applymap(lambda x: [x])
+                for i, df in enumerate(rolling_df_list)
+            ]
             for time_series, rolling_df_list in frame.items()
         }
 
@@ -79,7 +84,7 @@ def distance_correlation_matrix(df: pd.DataFrame) -> pd.DataFrame:
     tickers = df.columns.tolist()
     df_dcor = pd.DataFrame(index=tickers, columns=tickers)
 
-    k=0
+    k = 0
     for i in tickers:
         v_i = df.loc[:, i].values
         v_i = np.array([i for i in v_i])
@@ -91,21 +96,21 @@ def distance_correlation_matrix(df: pd.DataFrame) -> pd.DataFrame:
             df_dcor.at[i, j] = dcor_val
             df_dcor.at[j, i] = dcor_val
 
-        k+=1
+        k += 1
 
-    # dcor_matrix = matrix_power(df_dcor.to_numpy(), 2)
-    dcor_matrix = expm(df_dcor.to_numpy())
-    df_expdcor = pd.DataFrame(dcor_matrix)
-    df_expdcor.columns = df_dcor.columns
-    df_expdcor.index = df_dcor.index
+    return df_dcor
 
-    return df_expdcor
-    # return df_dcor
 
 @cached
-def build_correlation_network(df: pd.DataFrame, corr_threshold=None) -> nx.Graph:
+def build_correlation_network(
+    df: pd.DataFrame, soft_threshold: bool=True, corr_threshold=None
+) -> nx.Graph:
 
-    corr_matrix = df.values.astype('float')
+    if soft_threshold:
+        corr_matrix = df.values.astype("float")
+        corr_matrix = expm(corr_matrix)
+    if not soft_threshold:
+        corr_matrix = df.values.astype("float")
     # sim_matrix = 1 - corr_matrix
 
     G = nx.from_numpy_matrix(corr_matrix)
@@ -114,21 +119,24 @@ def build_correlation_network(df: pd.DataFrame, corr_threshold=None) -> nx.Graph
     G = nx.relabel_nodes(G, lambda x: ticker_names[x])
     G.edges(data=True)
 
-    H  = G.copy()
+    H = G.copy()
 
-    for (u,v,wt) in G.edges.data('weight'):
+    for (u, v, wt) in G.edges.data("weight"):
         if u == v:
             H.remove_edge(u, v)
 
     if corr_threshold is not None:
-        for (u, v, wt) in G.edges.data('weight'):
+        for (u, v, wt) in G.edges.data("weight"):
             if wt <= corr_threshold:
                 H.remove_edge(u, v)
 
     return H
 
+
 class HedgeFrame(object):
-    def __init__(self, df: pd.DataFrame, ticker_col_name: str, detrend: bool=True) -> None:
+    def __init__(
+        self, df: pd.DataFrame, ticker_col_name: str, detrend: bool = True
+    ) -> None:
 
         self.df = df
         self.ticker_col_name = ticker_col_name
@@ -166,11 +174,14 @@ class HedgeFrame(object):
                     for time_series, df in self.frame.items()
                 }
                 self.frame = frame
-            return self
+            return frame
 
         else:
             frame = {
-                time_series: [df.iloc[i:i+rolling_window] for i in range(len(df)-rolling_window)]
+                time_series: [
+                    df.iloc[i : i + rolling_window]
+                    for i in range(len(df) - rolling_window)
+                ]
                 for time_series, df in self.frame.items()
             }
             if coalesce:
@@ -182,25 +193,40 @@ class HedgeFrame(object):
                 self.frame = frame
             if not coalesce:
                 frame = {
-                    time_series:
-
-                        [
-                            distance_correlation_matrix(frame[time_series][i])
-                            for i,df in enumerate(rolling_df_list)
-                        ]
-
+                    time_series: [
+                        distance_correlation_matrix(frame[time_series][i])
+                        for i, df in enumerate(rolling_df_list)
+                    ]
                     for time_series, rolling_df_list in frame.items()
                 }
                 self.frame = frame
 
-            return self
+            return frame
 
-    def network(self, corr_threshold=None) -> Dict[str, pd.DataFrame]:
 
-        frame = {
-            time_series: build_correlation_network(df_dcor, corr_threshold=corr_threshold)
-            for time_series, df_dcor in self.frame.items()
-        }
-        self.frame = frame
+@cached
+def build_series(
+    df: pd.DataFrame,
+    ticker_col_name: str,
+    rolling_window: int,
+    coalesce: bool = True,
+    detrend: bool = True,
+) -> Dict[pd.Timestamp, pd.DataFrame]:
 
-        return self
+    hf = HedgeFrame(df, ticker_col_name=ticker_col_name, detrend=detrend)
+    frame = hf.dcor(rolling_window=rolling_window, coalesce=coalesce)
+
+    return frame
+
+
+def build_network_time_series(
+    frame: Dict[str, pd.DataFrame], soft_threshold: bool=True, corr_threshold=None
+) -> Dict[pd.Timestamp, nx.Graph]:
+
+    frame = {
+        time_series: build_correlation_network(
+            df_dcor, soft_threshold=soft_threshold, corr_threshold=corr_threshold
+        )
+        for time_series, df_dcor in frame.items()
+    }
+    return frame
