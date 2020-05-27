@@ -1,7 +1,6 @@
 import networkx as nx
 import pandas as pd
 import numpy as np
-from scipy.stats import gmean
 
 def average_degree_centrality(G):
     dc = nx.degree_centrality(G)
