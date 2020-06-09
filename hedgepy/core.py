@@ -34,6 +34,7 @@ def detrend_time_series(frame: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFram
 
     for time_series, df in frame.items():
         frame[time_series] = np.log(frame[time_series]) - np.log(frame[time_series].shift(1))
+        frame[time_series] = frame[time_series].dropna()
 
     return frame
 
