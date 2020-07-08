@@ -34,6 +34,7 @@ def detrend_time_series(frame: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFram
 
     for time_series, df in frame.items():
         frame[time_series] = np.log(frame[time_series]) - np.log(frame[time_series].shift(1))
+        frame[time_series] = frame[time_series].dropna()
 
     return frame
 
@@ -192,6 +193,10 @@ class HedgeFrame(object):
                 }
                 self.frame = frame
             if not coalesce:
+                length = len(list(frame.values())[0])
+                ts = list(frame.values())[0]
+                timestamps = [ts[i].index[-1] for i in range(length)]
+
                 frame = {
                     time_series: [
                         distance_correlation_matrix(frame[time_series][i])
@@ -199,6 +204,8 @@ class HedgeFrame(object):
                     ]
                     for time_series, rolling_df_list in frame.items()
                 }
+
+                frame = dict(zip(timestamps, list(frame.values())[0]))
                 self.frame = frame
 
             return frame
